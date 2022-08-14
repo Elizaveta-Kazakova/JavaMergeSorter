@@ -143,25 +143,19 @@ public class FileSorter {
                     if (lineFromFirst.equals(lineFromSecond)) { // if lines are equal write the first
                         lineFromFirst = firstReader.readLine();
                         ++numOfLine1;
-                    } else {
-                        numOfLine1 = getNextNumOfLine(lineFromFirst, lineFromSecond, numOfLine1);
-                        numOfLine2 = getNextNumOfLine(lineFromSecond, lineFromFirst, numOfLine2);
-                        String tmpLineFromFirst = getNextLine(lineFromFirst, lineFromSecond, firstReader);
-                        lineFromSecond = getNextLine(lineFromSecond, lineFromFirst, secondReader);
-                        lineFromFirst = tmpLineFromFirst;
+                        continue;
                     }
                 } catch (InvalidLine | TypeMismatch ex) {
                     System.out.println(ex.getMessage());
-                    numOfLine1 = getNextNumOfLine(lineFromFirst, lineFromSecond, numOfLine1);
-                    numOfLine2 = getNextNumOfLine(lineFromSecond, lineFromFirst, numOfLine2);
-                    lineFromFirst = getNextLine(lineFromFirst, lineFromSecond, firstReader);
-                    lineFromSecond = getNextLine(lineFromSecond, lineFromFirst, secondReader);
                 }
+                numOfLine1 = getNextNumOfLine(lineFromFirst, lineFromSecond, numOfLine1);
+                numOfLine2 = getNextNumOfLine(lineFromSecond, lineFromFirst, numOfLine2);
+                String tmpLineFromFirst = getNextLine(lineFromFirst, lineFromSecond, firstReader);
+                lineFromSecond = getNextLine(lineFromSecond, lineFromFirst, secondReader);
+                lineFromFirst = tmpLineFromFirst;
             }
             addRemainingFrom2Lines(firstReader, secondReader, lineFromFirst, lineFromSecond, writer, numOfLine1,
                     numOfSortedLines1, numOfLine2, numOfSortedLines2);
-        } catch (IOException e) {
-            throw e;
         }
     }
 
@@ -201,7 +195,7 @@ public class FileSorter {
         usingFileNames.remove(numberOfFileName);
     }
 
-    private void handle2WrongFileNames(int numberOfFileName1, int numberOfFileName2) {
+    private void handle2WrongFiles(int numberOfFileName1, int numberOfFileName2) {
         handleWrongFile(numberOfFileName1);
         handleWrongFile(numberOfFileName2);
     }
@@ -224,7 +218,7 @@ public class FileSorter {
                         numOfSortedLines2);
                 updateFileList(nextUsingFileName, numOfFileName, numOfFileName + 1);
             } catch (IOException e) {
-                handle2WrongFileNames(numOfFileName, numOfFileName + 1);
+                handle2WrongFiles(numOfFileName, numOfFileName + 1);
             }
         }
         mergeSort();
