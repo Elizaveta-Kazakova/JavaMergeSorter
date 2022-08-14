@@ -38,7 +38,7 @@ public class FileSorter {
         return res;
     }
 
-    private boolean isValid(String str) {
+    private boolean isStrValid(String str) {
         return !str.contains(INVALID_SYMBOL);
     }
 
@@ -87,7 +87,7 @@ public class FileSorter {
     }
 
     private void checkLine(String line) throws InvalidLine, TypeMismatch {
-        if (!isValid(line)) {
+        if (!isStrValid(line)) {
             throw new InvalidLine("Line " + line + " has invalid symbol: \"" + INVALID_SYMBOL + "\"." +
                     "The line is skipped");
         }
@@ -97,9 +97,18 @@ public class FileSorter {
                     + " consists elements of another type. The line is skipped");
         }
     }
+
+    private boolean isValidated(String line) {
+        try {
+            checkLine(line);
+        } catch (InvalidLine | TypeMismatch e) {
+            return false;
+        }
+        return true;
+    }
     
     private String getNextLine(String mutableLine, String comparedLine, BufferedReader reader) throws IOException {
-        if (!isValid(mutableLine) || !NumberUtils.isCreatable(mutableLine) && info.getDataType() == DataType.DIGITS) {
+        if (!isValidated(mutableLine)) {
             return reader.readLine();
         }
         if (info.getMode() == SortMode.ASCENDING ^ isLess(mutableLine, comparedLine)) {
@@ -109,7 +118,7 @@ public class FileSorter {
     }
 
     private int getNextNumOfLine(String mutableLine, String comparedLine, int numOfLines) {
-        if (!isValid(mutableLine) || !NumberUtils.isCreatable(mutableLine) && info.getDataType() == DataType.DIGITS) {
+        if (!isValidated(mutableLine)) {
             return ++numOfLines;
         }
         if (info.getMode() == SortMode.ASCENDING ^ isLess(mutableLine, comparedLine)) {
@@ -167,22 +176,22 @@ public class FileSorter {
                 || info.getMode() == SortMode.DESCENDING && isLess(startLine, line);
     }
 
-    private int getNumOfSortedLines(int numOfFileName) throws IOException { // TODO : если не проверить строку, то isLess выкинет exception
+    private String getValidatedStr(BufferedReader reader) throws IOException {
+        String line = reader.readLine();
+        while (line != null && !isValidated(line)) {
+            line = reader.readLine();
+        }
+        return line;
+    }
+
+    private int getNumOfSortedLines(int numOfFileName) throws IOException {
         int numOfSortedLines = 0;
         try(BufferedReader reader = new BufferedReader(new FileReader(usingFileNames.get(numOfFileName)))) {
-            String line = reader.readLine();
-            //while (line != null  ) { // -----
-            //    try {
-            //        checkLine(line);
-            //    } catch (InvalidLine | TypeMismatch e) {
-            //        e.printStackTrace();
-            //    }
-            //}
+            String line = getValidatedStr(reader);
             String startLine = line;
             while(line != null && !isSortOrderBroken(startLine, line)) {
-                //checkLine();
                 ++numOfSortedLines;
-                line = reader.readLine();
+                line = getValidatedStr(reader);
             }
         }
         return numOfSortedLines;
