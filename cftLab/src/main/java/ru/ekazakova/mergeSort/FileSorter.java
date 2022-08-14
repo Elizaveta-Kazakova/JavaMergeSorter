@@ -197,6 +197,15 @@ public class FileSorter {
         return numOfSortedLines;
     }
 
+    private void handleWrongFile(int numberOfFileName) {
+        usingFileNames.remove(numberOfFileName);
+    }
+
+    private void handle2WrongFileNames(int numberOfFileName1, int numberOfFileName2) {
+        handleWrongFile(numberOfFileName1);
+        handleWrongFile(numberOfFileName2);
+    }
+
     public FileSorter(InputInfo info) {
         this.info = info;
         usingFileNames = new ArrayList<>(info.getFileNames());
@@ -215,7 +224,7 @@ public class FileSorter {
                         numOfSortedLines2);
                 updateFileList(nextUsingFileName, numOfFileName, numOfFileName + 1);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO : !!!
+                handle2WrongFileNames(numOfFileName, numOfFileName + 1);
             }
         }
         mergeSort();
