@@ -195,8 +195,8 @@ public class FileSorter {
     }
 
     private void handle2WrongFiles(int numberOfFileName1, int numberOfFileName2) {
-        handleWrongFile(numberOfFileName1);
         handleWrongFile(numberOfFileName2);
+        handleWrongFile(numberOfFileName1);
     }
 
     public FileSorter(InputInfo info) {
