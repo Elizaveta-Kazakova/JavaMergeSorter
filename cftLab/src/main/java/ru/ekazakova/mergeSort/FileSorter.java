@@ -65,16 +65,15 @@ public class FileSorter {
             try {
                 checkLine(line);
                 writer.write(line + ELEMENT_DELIMITER);
-                line = reader.readLine();
             } catch (InvalidLine | TypeMismatch ex) {
                 System.out.println(ex.getMessage());
-                line = reader.readLine();
             }
+            line = reader.readLine();
             ++numOfLine;
         }
     }
 
-    private void addRemainingFrom2Lines(BufferedReader firstReader, BufferedReader secondReader, String line1,
+    private void addRemainingFrom2Files(BufferedReader firstReader, BufferedReader secondReader, String line1,
                                         String line2, BufferedWriter writer, int numOfLine1, int numOfSortedLines1,
                                         int numOfLine2, int numOfSortedLines2) throws IOException {
         addRemaining(firstReader, line1, writer, numOfLine1, numOfSortedLines1);
@@ -154,7 +153,7 @@ public class FileSorter {
                 lineFromSecond = getNextLine(lineFromSecond, lineFromFirst, secondReader);
                 lineFromFirst = tmpLineFromFirst;
             }
-            addRemainingFrom2Lines(firstReader, secondReader, lineFromFirst, lineFromSecond, writer, numOfLine1,
+            addRemainingFrom2Files(firstReader, secondReader, lineFromFirst, lineFromSecond, writer, numOfLine1,
                     numOfSortedLines1, numOfLine2, numOfSortedLines2);
         }
     }
@@ -218,6 +217,7 @@ public class FileSorter {
                         numOfSortedLines2);
                 updateFileList(nextUsingFileName, numOfFileName, numOfFileName + 1);
             } catch (IOException e) {
+                System.out.println(e.getMessage());
                 handle2WrongFiles(numOfFileName, numOfFileName + 1);
             }
         }
