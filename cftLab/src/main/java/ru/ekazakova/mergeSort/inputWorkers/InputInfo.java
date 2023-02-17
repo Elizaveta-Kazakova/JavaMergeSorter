@@ -1,8 +1,13 @@
 package ru.ekazakova.mergeSort.inputWorkers;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class InputInfo {
     private SortMode mode;
     private DataType dataType;
@@ -22,40 +27,8 @@ public class InputInfo {
         this(DataType.UNKNOWN);
     }
 
-    public DataType getDataType() {
-        return dataType;
-    }
-
-    public SortMode getMode() {
-        return mode;
-    }
-
-    public List<String> getFileNames() {
-        return inputFileNames;
-    }
-
-    public String getOutputFileName() {
-        return outputFileName;
-    }
-
-    public void setDataType(DataType dataType) {
-        this.dataType = dataType;
-    }
-
-    public void setMode(SortMode mode) {
-        this.mode = mode;
-    }
-
-    public void setInputFileNames(List<String> inputFileNames) {
-        this.inputFileNames = inputFileNames;
-    }
-
     public void addInputFileName(String fileName) {
         inputFileNames.add(fileName);
-    }
-
-    public void setOutputFileName(String outputFileName) {
-        this.outputFileName = outputFileName;
     }
 
 }

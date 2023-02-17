@@ -7,7 +7,7 @@ import ru.ekazakova.mergeSort.exceptions.inputEx.UndefinedParameter;
 public class InputHandler {
     private static final int START_POS = 0;
     private static final int SIZE_OF_EL = 1;
-    private static final int MINIMUM_FILES = 2;
+    private static final int MINIMUM_FILES = 1;
     private static final char PARAMETER_IDENTIFIER = '-';
     private static final char ASCENDING_PARAM = 'a';
     private static final char DESCENDING_PARAM = 'd';
@@ -29,7 +29,7 @@ public class InputHandler {
         }
     }
 
-    private static void setFileName(InputInfo info, String fileName) {
+    private static void setFileName(String fileName, InputInfo info) {
         if (info.getOutputFileName() == null) {
             info.setOutputFileName(fileName);
         } else {
@@ -37,20 +37,20 @@ public class InputHandler {
         }
     }
 
-    public static InputInfo getInfo(String[] inputArgs) throws UndefinedParameter, MissingDataType, LackOfFiles {
+    public static InputInfo generateInfo(String[] inputArgs) throws UndefinedParameter, MissingDataType, LackOfFiles {
         InputInfo info = new InputInfo();
         for(String arg : inputArgs) {
             if (arg.charAt(START_POS) == PARAMETER_IDENTIFIER) {
                 handleParam(arg, info);
             } else {
-                setFileName(info, arg);
+                setFileName(arg, info);
             }
         }
         if (info.getDataType() == DataType.UNKNOWN) {
             throw new MissingDataType("Datatype parameter not set. Please write " + PARAMETER_IDENTIFIER
                     + SYMBOLS_PARAM + ADDITION_MESSAGE_DELIMITER + PARAMETER_IDENTIFIER + DIGITS_PARAM);
         }
-        if (info.getFileNames().size() < MINIMUM_FILES) {
+        if (info.getInputFileNames().size() < MINIMUM_FILES) {
             throw new LackOfFiles("Passed less than minimum number of files - " + MINIMUM_FILES);
         }
         return info;

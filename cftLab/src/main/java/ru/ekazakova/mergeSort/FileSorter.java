@@ -1,20 +1,26 @@
 package ru.ekazakova.mergeSort;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import ru.ekazakova.mergeSort.exceptions.InvalidLine;
 import ru.ekazakova.mergeSort.exceptions.TypeMismatch;
 import ru.ekazakova.mergeSort.inputWorkers.DataType;
 import ru.ekazakova.mergeSort.inputWorkers.InputInfo;
 import ru.ekazakova.mergeSort.inputWorkers.SortMode;
-import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: хранение предыдущего и следующего, чтобы выявить, когда порядок сортировки нарушился и закончить алгоритм
+
+@Slf4j
 public class FileSorter {
     private static final String STANDARD_ADDITION_FILE_NAME = "tmp";
     private static final String STANDARD_ADDITION_FILE_TYPE = ".txt";
@@ -22,14 +28,15 @@ public class FileSorter {
     private static final String INVALID_SYMBOL = " ";
     private static final int NUM_OF_FILES_NOT_NEEDED_TO_ADD = 2;
     private static final int VALUE_FOR_EQUALS_ELS = 0;
-    private static final int MINIMUM_FILES_FOR_SORT = 2;
+    private static final int MINIMUM_FILES = 1;
+    private static final int INDEX_FOR_OUTPUT_FILE = 0;
 
     private final InputInfo info;
     private final List<String> usingFileNames;
 
     private int numberOfAdditionFile = 0;
 
-    private String getNextUsingFileName() {
+    private String computeNextUsingFileName() {
         if (usingFileNames.size() == NUM_OF_FILES_NOT_NEEDED_TO_ADD) {
             return info.getOutputFileName();
         }
@@ -38,8 +45,8 @@ public class FileSorter {
         return res;
     }
 
-    private boolean isStrValid(String str) {
-        return !str.contains(INVALID_SYMBOL);
+    private boolean isStrContainsInvalidSymbols(String str) {
+        return str.contains(INVALID_SYMBOL);
     }
 
     private boolean isLess(String el1, String el2) {
@@ -49,7 +56,7 @@ public class FileSorter {
         return el1.compareTo(el2) < VALUE_FOR_EQUALS_ELS;
     }
 
-    private void sortLine(BufferedWriter writer, String line1, String line2) throws IOException {
+    private void writeRightLine(BufferedWriter writer, String line1, String line2) throws IOException {
         String formattedLine1 = line1 + ELEMENT_DELIMITER;
         String formattedLine2 = line2 + ELEMENT_DELIMITER;
         if (isLess(line1, line2)) {
@@ -61,9 +68,9 @@ public class FileSorter {
 
     private void addRemaining(BufferedReader reader, String line, BufferedWriter writer, int numOfLine,
                               int numOfSortedLines) throws IOException {
-        while(numOfLine < numOfSortedLines) {
+        while (numOfLine < numOfSortedLines) {
             try {
-                checkLine(line);
+                checkLineForValidation(line);
                 writer.write(line + ELEMENT_DELIMITER);
             } catch (InvalidLine | TypeMismatch ex) {
                 System.out.println(ex.getMessage());
@@ -80,13 +87,13 @@ public class FileSorter {
         addRemaining(secondReader, line2, writer, numOfLine2, numOfSortedLines2);
     }
 
-    private void checkLines(String line1, String line2) throws InvalidLine, TypeMismatch {
-        checkLine(line1);
-        checkLine(line2);
+    private void checkLinesForValidation(String line1, String line2) throws InvalidLine, TypeMismatch {
+        checkLineForValidation(line1);
+        checkLineForValidation(line2);
     }
 
-    private void checkLine(String line) throws InvalidLine, TypeMismatch {
-        if (!isStrValid(line)) {
+    private void checkLineForValidation(String line) throws InvalidLine, TypeMismatch {
+        if (isStrContainsInvalidSymbols(line)) {
             throw new InvalidLine("Line " + line + " has invalid symbol: \"" + INVALID_SYMBOL + "\"." +
                     "The line is skipped");
         }
@@ -97,17 +104,17 @@ public class FileSorter {
         }
     }
 
-    private boolean isValidated(String line) {
+    private boolean isStrValid(String line) {
         try {
-            checkLine(line);
+            checkLineForValidation(line);
         } catch (InvalidLine | TypeMismatch e) {
             return false;
         }
         return true;
     }
-    
-    private String getNextLine(String mutableLine, String comparedLine, BufferedReader reader) throws IOException {
-        if (!isValidated(mutableLine)) {
+
+    private String computeNextLine(String mutableLine, String comparedLine, BufferedReader reader) throws IOException {
+        if (!isStrValid(mutableLine)) {
             return reader.readLine();
         }
         if (info.getMode() == SortMode.ASCENDING ^ isLess(mutableLine, comparedLine)) {
@@ -116,8 +123,8 @@ public class FileSorter {
         return reader.readLine();
     }
 
-    private int getNextNumOfLine(String mutableLine, String comparedLine, int numOfLines) {
-        if (!isValidated(mutableLine)) {
+    private int computeNextNumOfLine(String mutableLine, String comparedLine, int numOfLines) {
+        if (!isStrValid(mutableLine)) {
             return ++numOfLines;
         }
         if (info.getMode() == SortMode.ASCENDING ^ isLess(mutableLine, comparedLine)) {
@@ -128,17 +135,17 @@ public class FileSorter {
 
     private void merge(int firstFileIndex, int secondFileIndex, String additionFileName, int numOfSortedLines1,
                        int numOfSortedLines2) throws IOException {
-        try(BufferedReader firstReader = new BufferedReader(new FileReader(usingFileNames.get(firstFileIndex)));
-                BufferedReader secondReader = new BufferedReader(new FileReader(usingFileNames.get(secondFileIndex)));
-                BufferedWriter writer = new BufferedWriter(new FileWriter(additionFileName))) {
+        try (BufferedReader firstReader = new BufferedReader(new FileReader(usingFileNames.get(firstFileIndex)));
+             BufferedReader secondReader = new BufferedReader(new FileReader(usingFileNames.get(secondFileIndex)));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(additionFileName))) {
             String lineFromFirst = firstReader.readLine();
             String lineFromSecond = secondReader.readLine();
             int numOfLine1 = 0;
             int numOfLine2 = 0;
-            while(numOfLine1 < numOfSortedLines1 && numOfLine2 < numOfSortedLines2) {
+            while (numOfLine1 < numOfSortedLines1 && numOfLine2 < numOfSortedLines2) {
                 try {
-                    checkLines(lineFromFirst, lineFromSecond);
-                    sortLine(writer, lineFromFirst, lineFromSecond);
+                    checkLinesForValidation(lineFromFirst, lineFromSecond);
+                    writeRightLine(writer, lineFromFirst, lineFromSecond);
                     if (lineFromFirst.equals(lineFromSecond)) { // if lines are equal write the first
                         lineFromFirst = firstReader.readLine();
                         ++numOfLine1;
@@ -147,12 +154,13 @@ public class FileSorter {
                 } catch (InvalidLine | TypeMismatch ex) {
                     System.out.println(ex.getMessage());
                 }
-                numOfLine1 = getNextNumOfLine(lineFromFirst, lineFromSecond, numOfLine1);
-                numOfLine2 = getNextNumOfLine(lineFromSecond, lineFromFirst, numOfLine2);
-                String tmpLineFromFirst = getNextLine(lineFromFirst, lineFromSecond, firstReader);
-                lineFromSecond = getNextLine(lineFromSecond, lineFromFirst, secondReader);
+                numOfLine1 = computeNextNumOfLine(lineFromFirst, lineFromSecond, numOfLine1);
+                numOfLine2 = computeNextNumOfLine(lineFromSecond, lineFromFirst, numOfLine2);
+                String tmpLineFromFirst = computeNextLine(lineFromFirst, lineFromSecond, firstReader);
+                lineFromSecond = computeNextLine(lineFromSecond, lineFromFirst, secondReader);
                 lineFromFirst = tmpLineFromFirst;
             }
+            log.info("write remaining lines to " + additionFileName);
             addRemainingFrom2Files(firstReader, secondReader, lineFromFirst, lineFromSecond, writer, numOfLine1,
                     numOfSortedLines1, numOfLine2, numOfSortedLines2);
         }
@@ -169,22 +177,22 @@ public class FileSorter {
                 || info.getMode() == SortMode.DESCENDING && isLess(startLine, line);
     }
 
-    private String getValidatedStr(BufferedReader reader) throws IOException {
+    private String findValidatedStr(BufferedReader reader) throws IOException {
         String line = reader.readLine();
-        while (line != null && !isValidated(line)) {
+        while (line != null && !isStrValid(line)) {
             line = reader.readLine();
         }
         return line;
     }
 
-    private int getNumOfSortedLines(int numOfFileName) throws IOException {
+    private int computeNumOfSortedLines(int numOfFileName) throws IOException {
         int numOfSortedLines = 0;
-        try(BufferedReader reader = new BufferedReader(new FileReader(usingFileNames.get(numOfFileName)))) {
-            String line = getValidatedStr(reader);
+        try (BufferedReader reader = new BufferedReader(new FileReader(usingFileNames.get(numOfFileName)))) {
+            String line = findValidatedStr(reader);
             String startLine = line;
-            while(line != null && !isSortOrderBroken(startLine, line)) {
+            while (line != null && !isSortOrderBroken(startLine, line)) {
                 ++numOfSortedLines;
-                line = getValidatedStr(reader);
+                line = findValidatedStr(reader);
             }
         }
         return numOfSortedLines;
@@ -201,18 +209,25 @@ public class FileSorter {
 
     public FileSorter(InputInfo info) {
         this.info = info;
-        usingFileNames = new ArrayList<>(info.getFileNames());
+        usingFileNames = new ArrayList<>(info.getInputFileNames());
     }
 
-    public void mergeSort() {
-        if (usingFileNames.size() < MINIMUM_FILES_FOR_SORT) {
+    public void mergeSort() throws IOException {
+        if (usingFileNames.size() == MINIMUM_FILES && !usingFileNames.get(INDEX_FOR_OUTPUT_FILE).equals(info.getOutputFileName())) {
+            FileUtils.copyFile(new File(usingFileNames.get(INDEX_FOR_OUTPUT_FILE)), new File(info.getOutputFileName()));
             return;
         }
+        if (usingFileNames.size() <= MINIMUM_FILES) {
+            return;
+        }
+
         for (int numOfFileName = 0; numOfFileName + 1 < usingFileNames.size(); ++numOfFileName) {
             try {
-                String nextUsingFileName = getNextUsingFileName();
-                int numOfSortedLines1 = getNumOfSortedLines(numOfFileName);
-                int numOfSortedLines2 = getNumOfSortedLines(numOfFileName + 1);
+                String nextUsingFileName = computeNextUsingFileName();
+                int numOfSortedLines1 = computeNumOfSortedLines(numOfFileName);
+                int numOfSortedLines2 = computeNumOfSortedLines(numOfFileName + 1);
+                log.info("start to merge " + usingFileNames.get(numOfFileName) + " and "
+                        + usingFileNames.get(numOfFileName + 1) + " to " + nextUsingFileName);
                 merge(numOfFileName, numOfFileName + 1, nextUsingFileName, numOfSortedLines1,
                         numOfSortedLines2);
                 updateFileList(nextUsingFileName, numOfFileName, numOfFileName + 1);
