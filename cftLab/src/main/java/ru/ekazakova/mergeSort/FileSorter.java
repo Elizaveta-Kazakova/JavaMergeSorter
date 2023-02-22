@@ -200,9 +200,10 @@ public class FileSorter {
         usingFileNames.add(firstUsedFile, newFileName);
     }
 
-    private boolean isSortOrderBroken(String startLine, String line) {
-        return info.getMode() == SortMode.ASCENDING && isLess(line, startLine)
-                || info.getMode() == SortMode.DESCENDING && isLess(startLine, line);
+    private boolean isSortOrderBroken(String previousLine, String line) {
+        if (!isStrValid(previousLine)) return false;
+        return info.getMode() == SortMode.ASCENDING && isLess(line, previousLine)
+                || info.getMode() == SortMode.DESCENDING && isLess(previousLine, line);
     }
 
     private void handleWrongFile(int numberOfFileName) {
